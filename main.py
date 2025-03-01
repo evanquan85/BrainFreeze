@@ -3,6 +3,7 @@ import numpy as np
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 
+file_path = 'data/BFData_02.csv' # Replace with actual file path
 
 def load_data(file_path):
     """Load CSV file into a DataFrame."""
@@ -22,15 +23,15 @@ def analyze_brain_freeze(file_path):
 
     # Define time-based conditions for baseline and brain freeze
     baseline_df = df[df["Time (s)"] <= 60]  # First 60 seconds are baseline
-    brain_freeze_df = df[df["Time (s)"] >= 187]  # Brain freeze starts at 187 seconds
+    brain_freeze_df = df[df["Time (s)"] >= 187]  # Brain freeze starts at 187 seconds (EDIT THIS FOR EACH FILE)
 
     # Ensure copy to avoid SettingWithCopyWarning
     brain_freeze_df = brain_freeze_df.copy()
 
-    # Remove HR spike between 239-241 seconds and interpolate the values
-    hr_spike_mask = (brain_freeze_df["Time (s)"] >= 239) & (brain_freeze_df["Time (s)"] <= 241)
-    brain_freeze_df.loc[hr_spike_mask, "HR"] = np.nan
-    brain_freeze_df["HR"] = brain_freeze_df["HR"].interpolate(method='linear')
+    # Remove HR spike between 239-241 seconds and interpolate the values - ONLY IF OUTLIER VALUE
+    # hr_spike_mask = (brain_freeze_df["Time (s)"] >= 239) & (brain_freeze_df["Time (s)"] <= 241)
+    # brain_freeze_df.loc[hr_spike_mask, "HR"] = np.nan
+    # brain_freeze_df["HR"] = brain_freeze_df["HR"].interpolate(method='linear')
 
     # Extracting relevant columns for analysis (excluding Time and unnamed columns)
     factors = ['MCAv_mean', 'MCAv_dia', 'MCAv_raw', 'MCAv_sys', 'FP_raw',
@@ -105,6 +106,5 @@ def analyze_brain_freeze(file_path):
         plt.show()
 
 
-# Example usage
-file_path = 'data/BFData_02.csv'  # Replace with actual file path
+# REMEMBER TO CALL FUNCTION
 analyze_brain_freeze(file_path)
