@@ -3,11 +3,11 @@ import numpy as np
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 
-file_path = 'data/BFData_02.csv' # Replace with actual file path
+normoxic_file_path = 'data/BFData_02.csv' # Replace with actual file path
 
-def load_data(file_path):
+def load_data(normoxic_file_path):
     """Load CSV file into a DataFrame."""
-    return pd.read_csv(file_path)
+    return pd.read_csv(normoxic_file_path)
 
 
 def remove_spikes(df, factors, window_size=250):
@@ -17,9 +17,9 @@ def remove_spikes(df, factors, window_size=250):
     return df
 
 
-def analyze_brain_freeze(file_path):
+def analyze_brain_freeze(normoxic_file_path):
     """Main function to perform analysis."""
-    df = load_data(file_path)
+    df = load_data(normoxic_file_path)
 
     # Define time-based conditions for baseline and brain freeze
     baseline_df = df[df["Time (s)"] <= 60]  # First 60 seconds are baseline
@@ -107,4 +107,4 @@ def analyze_brain_freeze(file_path):
 
 
 # REMEMBER TO CALL FUNCTION
-analyze_brain_freeze(file_path)
+analyze_brain_freeze(normoxic_file_path)
