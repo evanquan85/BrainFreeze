@@ -3,35 +3,31 @@ import numpy as np
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 
-file_path = 'data/BFData_02.csv' # Replace with actual file path
+hypoxic_file_path = 'data/'  # Replace with actual file path
 
 def load_data(file_path):
     """Load CSV file into a DataFrame."""
     return pd.read_csv(file_path)
 
 
-def remove_spikes(df, factors, window_size=7):
+def remove_spikes(df, factors, window_size=250):
     """Apply a rolling median filter with a larger window to remove more aggressive spikes."""
     for factor in factors:
         df[factor] = df[factor].rolling(window=window_size, center=True).median()
     return df
 
 
-def analyze_brain_freeze(file_path):
-    """Main function to perform analysis."""
+def analyze_hypoxia(file_path):
+    """Main function to perform hypoxic analysis."""
     df = load_data(file_path)
 
-    # Define time-based conditions for baseline and brain freeze
+    # Define time-based conditions for baseline and hypoxia
     baseline_df = df[df["Time (s)"] <= 60]  # First 60 seconds are baseline
-    brain_freeze_df = df[df["Time (s)"] >= 187]  # Brain freeze starts at 187 seconds (EDIT THIS FOR EACH FILE)
+    hypoxia_start_time = 200  # Adjust this based on the dataset
+    hypoxia_df = df[df["Time (s)"] >= hypoxia_start_time]
 
     # Ensure copy to avoid SettingWithCopyWarning
-    brain_freeze_df = brain_freeze_df.copy()
-
-    # Remove HR spike between 239-241 seconds and interpolate the values - ONLY IF OUTLIER VALUE
-    # hr_spike_mask = (brain_freeze_df["Time (s)"] >= 239) & (brain_freeze_df["Time (s)"] <= 241)
-    # brain_freeze_df.loc[hr_spike_mask, "HR"] = np.nan
-    # brain_freeze_df["HR"] = brain_freeze_df["HR"].interpolate(method='linear')
+    hypoxia_df = hypoxia_df.copy()
 
     # Extracting relevant columns for analysis (excluding Time and unnamed columns)
     factors = ['MCAv_mean', 'MCAv_dia', 'MCAv_raw', 'MCAv_sys', 'FP_raw',
@@ -40,16 +36,16 @@ def analyze_brain_freeze(file_path):
     # Apply spike removal filter with a more aggressive window size
     df = remove_spikes(df, factors, window_size=250)
     baseline_df = df[df["Time (s)"] <= 60]
-    brain_freeze_df = df[df["Time (s)"] >= 187]
+    hypoxia_df = df[df["Time (s)"] >= hypoxia_start_time]
 
     # Ensure equal sample sizes for comparison AFTER spike removal
-    min_length = min(len(baseline_df), len(brain_freeze_df))
+    min_length = min(len(baseline_df), len(hypoxia_df))
     baseline_sample = baseline_df.iloc[:min_length].reset_index(drop=True)
-    brain_freeze_sample = brain_freeze_df.iloc[:min_length].reset_index(drop=True)
+    hypoxia_sample = hypoxia_df.iloc[:min_length].reset_index(drop=True)
 
     # Normalize time to be relative within each condition
     baseline_sample["Relative Time (s)"] = baseline_sample["Time (s)"] - baseline_sample["Time (s)"].iloc[0]
-    brain_freeze_sample["Relative Time (s)"] = brain_freeze_sample["Time (s)"] - brain_freeze_sample["Time (s)"].iloc[0]
+    hypoxia_sample["Relative Time (s)"] = hypoxia_sample["Time (s)"] - hypoxia_sample["Time (s)"].iloc[0]
 
     # Calculate peak values and time to peak for each factor
     results = []
@@ -57,19 +53,19 @@ def analyze_brain_freeze(file_path):
         baseline_peak = round(baseline_sample[factor].max(), 4)
         baseline_time = round(baseline_sample.loc[baseline_sample[factor].idxmax(), "Relative Time (s)"], 4)
 
-        brain_freeze_peak = round(brain_freeze_sample[factor].max(), 4)
-        brain_freeze_time = round(brain_freeze_sample.loc[brain_freeze_sample[factor].idxmax(), "Relative Time (s)"], 4)
+        hypoxia_peak = round(hypoxia_sample[factor].max(), 4)
+        hypoxia_time = round(hypoxia_sample.loc[hypoxia_sample[factor].idxmax(), "Relative Time (s)"], 4)
 
-        percent_change = round(((brain_freeze_peak - baseline_peak) / baseline_peak) * 100, 4)
+        percent_change = round(((hypoxia_peak - baseline_peak) / baseline_peak) * 100, 4)
 
         # Perform dependent two-tailed t-test, handling NaNs and ensuring equal-length samples
         clean_baseline = baseline_sample[factor].dropna().values
-        clean_brain_freeze = brain_freeze_sample[factor].dropna().values
+        clean_hypoxia = hypoxia_sample[factor].dropna().values
 
         # Trim longer array to match the shorter one
-        min_len = min(len(clean_baseline), len(clean_brain_freeze))
+        min_len = min(len(clean_baseline), len(clean_hypoxia))
         if min_len > 1:
-            t_stat, p_value = stats.ttest_rel(clean_baseline[:min_len], clean_brain_freeze[:min_len])
+            t_stat, p_value = stats.ttest_rel(clean_baseline[:min_len], clean_hypoxia[:min_len])
             t_stat = round(t_stat, 4)
             p_value = round(p_value, 4)
         else:
@@ -79,8 +75,8 @@ def analyze_brain_freeze(file_path):
             "Factor": factor,
             "Baseline Peak": baseline_peak,
             "Baseline Time to Peak": baseline_time,
-            "Brain Freeze Peak": brain_freeze_peak,
-            "Brain Freeze Time to Peak": brain_freeze_time,
+            "Hypoxia Peak": hypoxia_peak,
+            "Hypoxia Time to Peak": hypoxia_time,
             "% Change": percent_change,
             "T-Statistic": t_stat,
             "P-Value": p_value
@@ -97,14 +93,12 @@ def analyze_brain_freeze(file_path):
     for factor in factors:
         plt.figure()
         plt.plot(baseline_sample["Relative Time (s)"], baseline_sample[factor], label="Baseline", color='blue')
-        plt.plot(brain_freeze_sample["Relative Time (s)"], brain_freeze_sample[factor], label="Brain Freeze",
-                 color='red')
+        plt.plot(hypoxia_sample["Relative Time (s)"], hypoxia_sample[factor], label="Hypoxia", color='red')
         plt.xlabel("Relative Time (s)")
         plt.ylabel(factor)
         plt.title(f"Comparison of {factor} Over Relative Time")
         plt.legend()
         plt.show()
 
-
-# REMEMBER TO CALL FUNCTION
-analyze_brain_freeze(file_path)
+#REMBEMBER TO CALL FUNCTION
+analyze_hypoxia(hypoxic_file_path)
