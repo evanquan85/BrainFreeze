@@ -3,7 +3,7 @@ import numpy as np
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 
-normoxic_file_path = 'data/BFData_02.csv' # Replace with actual file path
+normoxic_file_path = 'data/BFData_05.csv' # Replace with actual file path
 
 def load_data(normoxic_file_path):
     """Load CSV file into a DataFrame."""
@@ -13,6 +13,9 @@ def load_data(normoxic_file_path):
 def remove_spikes(df, factors, window_size=250):
     """Apply a rolling median filter with a larger window to remove more aggressive spikes."""
     for factor in factors:
+        # Convert column to numeric, setting errors='coerce' will replace non-numeric values with NaN
+        df[factor] = pd.to_numeric(df[factor], errors='coerce')
+        # Apply rolling median filter
         df[factor] = df[factor].rolling(window=window_size, center=True).median()
     return df
 
@@ -21,12 +24,8 @@ def analyze_brain_freeze(normoxic_file_path):
     """Main function to perform analysis."""
     df = load_data(normoxic_file_path)
 
-    # Define time-based conditions for baseline and brain freeze
-    baseline_df = df[df["Time (s)"] <= 60]  # First 60 seconds are baseline
-    brain_freeze_df = df[df["Time (s)"] >= 187]  # Brain freeze starts at 187 seconds (EDIT THIS FOR EACH FILE)
-
     # Ensure copy to avoid SettingWithCopyWarning
-    brain_freeze_df = brain_freeze_df.copy()
+    df = df.copy()
 
     # Remove HR spike between 239-241 seconds and interpolate the values - ONLY IF OUTLIER VALUE
     # hr_spike_mask = (brain_freeze_df["Time (s)"] >= 239) & (brain_freeze_df["Time (s)"] <= 241)
@@ -39,8 +38,11 @@ def analyze_brain_freeze(normoxic_file_path):
 
     # Apply spike removal filter with a more aggressive window size
     df = remove_spikes(df, factors, window_size=250)
-    baseline_df = df[df["Time (s)"] <= 60]
-    brain_freeze_df = df[df["Time (s)"] >= 187]
+
+    # Define time-based conditions for baseline and brain freeze
+    df["Time (s)"] = pd.to_numeric(df["Time (s)"], errors='coerce')  # Convert to numeric
+    baseline_df = df[df["Time (s)"] <= 60] # First 60 seconds are baseline
+    brain_freeze_df = df[df["Time (s)"] >= 189] # Brain freeze starts at 185-195 seconds (EDIT THIS FOR EACH FILE)
 
     # Ensure equal sample sizes for comparison AFTER spike removal
     min_length = min(len(baseline_df), len(brain_freeze_df))
