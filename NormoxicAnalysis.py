@@ -3,14 +3,14 @@ import numpy as np
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 
-normoxic_file_path = 'data/BFData_05.csv' # Replace with actual file path
+normoxic_file_path = 'data/BFData_02.csv' # Replace with actual file path
 
 def load_data(normoxic_file_path):
     """Load CSV file into a DataFrame."""
     return pd.read_csv(normoxic_file_path)
 
 
-def remove_spikes(df, factors, window_size=250):
+def remove_spikes(df, factors, window_size):
     """Apply a rolling median filter with a larger window to remove more aggressive spikes."""
     for factor in factors:
         # Convert column to numeric, setting errors='coerce' will replace non-numeric values with NaN
@@ -27,22 +27,22 @@ def analyze_brain_freeze(normoxic_file_path):
     # Ensure copy to avoid SettingWithCopyWarning
     df = df.copy()
 
+    # Define time-based conditions for baseline and brain freeze
+    df["Time (s)"] = pd.to_numeric(df["Time (s)"], errors='coerce')  # Convert to numeric
+    baseline_df = df[df["Time (s)"] <= 60] # First 60 seconds are baseline
+    brain_freeze_df = df[df["Time (s)"] >= 189] # Brain freeze starts at 185-195 seconds (EDIT THIS FOR EACH FILE)
+
     # Remove HR spike between 239-241 seconds and interpolate the values - ONLY IF OUTLIER VALUE
-    # hr_spike_mask = (brain_freeze_df["Time (s)"] >= 239) & (brain_freeze_df["Time (s)"] <= 241)
-    # brain_freeze_df.loc[hr_spike_mask, "HR"] = np.nan
-    # brain_freeze_df["HR"] = brain_freeze_df["HR"].interpolate(method='linear')
+    hr_spike_mask = (brain_freeze_df["Time (s)"] >= 239) & (brain_freeze_df["Time (s)"] <= 241)
+    brain_freeze_df.loc[hr_spike_mask, "HR"] = np.nan
+    brain_freeze_df["HR"] = brain_freeze_df["HR"].interpolate(method='linear')
 
     # Extracting relevant columns for analysis (excluding Time and unnamed columns)
     factors = ['MCAv_mean', 'MCAv_dia', 'MCAv_raw', 'MCAv_sys', 'FP_raw',
                'HCU_pressure', 'Systolic', 'Mean_arterial', 'Diastolic', 'HR', 'MCA_PI']
 
     # Apply spike removal filter with a more aggressive window size
-    df = remove_spikes(df, factors, window_size=250)
-
-    # Define time-based conditions for baseline and brain freeze
-    df["Time (s)"] = pd.to_numeric(df["Time (s)"], errors='coerce')  # Convert to numeric
-    baseline_df = df[df["Time (s)"] <= 60] # First 60 seconds are baseline
-    brain_freeze_df = df[df["Time (s)"] >= 189] # Brain freeze starts at 185-195 seconds (EDIT THIS FOR EACH FILE)
+    df = remove_spikes(df, factors, window_size=10)
 
     # Ensure equal sample sizes for comparison AFTER spike removal
     min_length = min(len(baseline_df), len(brain_freeze_df))
@@ -107,6 +107,23 @@ def analyze_brain_freeze(normoxic_file_path):
         plt.legend()
         plt.show()
 
+    # Plot
+    plt.figure(figsize=(12, 6))
 
+    # Plot MCAv_raw as a light gray background line
+    plt.plot(df["Time (s)"], df["MCAv_raw"], color='lightgray', alpha=0.6, label="MCAv_raw")
+
+    # Plot MCAv_mean as a red trendline
+    plt.plot(df["Time (s)"], df["MCAv_mean"], color='red', linewidth=2, label="MCAv_mean (Trend)")
+
+    # Labels and title
+    plt.xlabel("Time (s)")
+    plt.ylabel("MCA Velocity")
+    plt.title("MCAv_raw Background with MCAv_mean Trendline")
+    plt.legend()
+    plt.grid(True)
+
+    # Show plot
+    plt.show()
 # REMEMBER TO CALL FUNCTION
 analyze_brain_freeze(normoxic_file_path)
