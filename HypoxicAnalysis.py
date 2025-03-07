@@ -88,7 +88,7 @@ def analyze_hypoxia(file_path):
     pd.set_option('display.width', 1000)  # Set output width to avoid truncation
     print(results_df)
 
-    # Plot comparison for each factor as overlapped line graphs with relative time
+    # Plot comparison for each factor as overlapped line Graphs with relative time
     plt.figure(figsize=(12, 6))
     for factor in factors:
         plt.figure()

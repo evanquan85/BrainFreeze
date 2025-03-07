@@ -3,7 +3,7 @@ import numpy as np
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 
-normoxic_file_path = 'data/BFData_02.csv' # Replace with actual file path
+normoxic_file_path = 'data/BFData_01.csv' # Replace with actual file path
 
 def load_data(normoxic_file_path):
     """Load CSV file into a DataFrame."""
@@ -96,8 +96,10 @@ def analyze_brain_freeze(normoxic_file_path):
     pd.set_option('display.max_columns', None)
     pd.set_option('display.width', 1000)  # Set output width to avoid truncation
     print(results_df)
+    # Save dataframe print output as CSV - MODIFY FOR EACH PARTICIPANT
+    results_df.to_csv('PrintOutputs/Brain_Freeze_Results002.csv', index=False)
 
-    # Plot comparison for each factor as overlapped line graphs with relative time
+    # Plot comparison for each factor as overlapped line Graphs with relative time
     '''
     plt.figure(figsize=(12, 6))
     for factor in factors:
@@ -118,7 +120,7 @@ def analyze_brain_freeze(normoxic_file_path):
     plt.plot(df["Time (s)"], df["MCAv_raw"], label="MCAv_raw", color='gray', alpha=0.5)
 
     # Plot MCAv_mean as a more variable trace in red
-    plt.plot(df["Time (s)"], df["MCAv_mean"], label="MCAv_mean Trace", color='red', linewidth=2)
+    plt.plot(df["Time (s)"], df["MCAv_mean"], label="MCAv_mean", color='red', linewidth=2)
 
     # Add a vertical dashed line at 189 seconds
     plt.axvline(x=189, color='blue', linestyle='dashed', label="Brain Freeze Start")
@@ -131,8 +133,11 @@ def analyze_brain_freeze(normoxic_file_path):
     # Labels and title
     plt.xlabel("Time (s)")
     plt.ylabel("MCA Velocity")
-    plt.title("MCAv_raw with MCAv_mean Trace")
+    plt.title("Mean MCA & Raw MCA Velocity Over Time")
     plt.legend()
+
+    # Save plot with higher DPI (e.g., 300 for print-quality) - RENAME EACH FOR EACH PARTICIPANT
+    plt.savefig("Graphs/MCA_Velocity_Comparison002.png", dpi=600, bbox_inches="tight")
 
     # Show the plot
     plt.show()
