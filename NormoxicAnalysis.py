@@ -3,7 +3,7 @@ import numpy as np
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 
-normoxic_file_path = 'data/BFData_05.csv' # Replace with actual file path
+normoxic_file_path = 'data/BFData_06.csv' # Replace with actual file path
 
 def load_data(normoxic_file_path):
     """Load CSV file into a DataFrame."""
@@ -30,7 +30,7 @@ def analyze_brain_freeze(normoxic_file_path):
     df = df.copy()
     # Define time-based conditions for baseline and brain freeze
     baseline_df = df[df["Time (s)"] <= 60] # First 60 seconds are baseline
-    brain_freeze_df = df[df["Time (s)"] >= 188] # Brain freeze starts at 185-195 seconds (EDIT THIS FOR EACH FILE)
+    brain_freeze_df = df[df["Time (s)"] >= 189] # Brain freeze starts at 185-195 seconds (EDIT THIS FOR EACH FILE)
 
     # Remove HR spike between 239-241 seconds and interpolate the values - ONLY IF OUTLIER VALUE
     #hr_spike_mask = (brain_freeze_df["Time (s)"] >= 239) & (brain_freeze_df["Time (s)"] <= 241)
