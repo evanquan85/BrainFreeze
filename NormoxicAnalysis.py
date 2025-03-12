@@ -3,7 +3,7 @@ import numpy as np
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 
-normoxic_file_path = 'data/BFData_06.csv' # Replace with actual file path
+normoxic_file_path = 'data/BFData_08.csv' # Replace with actual file path
 
 def load_data(normoxic_file_path):
     """Load CSV file into a DataFrame."""
@@ -30,7 +30,7 @@ def analyze_brain_freeze(normoxic_file_path):
     df = df.copy()
     # Define time-based conditions for baseline and brain freeze
     baseline_df = df[df["Time (s)"] <= 60] # First 60 seconds are baseline
-    brain_freeze_df = df[df["Time (s)"] >= 189] # Brain freeze starts at 185-195 seconds (EDIT THIS FOR EACH FILE)
+    brain_freeze_df = df[df["Time (s)"] >= 186] # Brain freeze starts at 185-195 seconds (EDIT THIS FOR EACH FILE)
 
     # Remove HR spike between 239-241 seconds and interpolate the values - ONLY IF OUTLIER VALUE
     #hr_spike_mask = (brain_freeze_df["Time (s)"] >= 239) & (brain_freeze_df["Time (s)"] <= 241)
@@ -104,7 +104,7 @@ def analyze_brain_freeze(normoxic_file_path):
     pd.set_option('display.width', 1000)  # Set output width to avoid truncation
     print(results_df)
     # Save dataframe print output as CSV - MODIFY FOR EACH PARTICIPANT
-    results_df.to_csv('PrintOutputs/Brain_Freeze_Results005.csv', index=False)
+    results_df.to_csv('PrintOutputs/Brain_Freeze_Results008.csv', index=False)
 
     # Plot comparison for each factor as overlapped line Graphs with relative time
     '''
@@ -130,8 +130,8 @@ def analyze_brain_freeze(normoxic_file_path):
     plt.plot(df["Time (s)"], df["MCAv_mean"], label="MCAv_mean", color='red', linewidth=2)
 
     # Add a vertical dashed line at important seconds/time - MODIFY FOR EACH PARTICIPANT
-    plt.axvline(x=188, color='blue', linestyle='dashed', label="Brain Freeze Start")
-    plt.axvline(x=202, color='green', linestyle='dashed', label="Brain Freeze Achieved")
+    plt.axvline(x=186, color='blue', linestyle='dashed', label="Brain Freeze Start")
+    plt.axvline(x=207, color='green', linestyle='dashed', label="Brain Freeze Achieved")
     plt.axvline(x=60, color='black', linestyle='dashed', label='Resting')
 
     # Add text annotation for "Resting" slightly more to the left
@@ -144,7 +144,7 @@ def analyze_brain_freeze(normoxic_file_path):
     plt.legend()
 
     # Save plot with higher DPI (e.g., 300 for print-quality) - RENAME EACH FOR EACH PARTICIPANT
-    plt.savefig("Graphs/MCA_Velocity_Comparison005.png", dpi=600, bbox_inches="tight")
+    plt.savefig("Graphs/MCA_Velocity_Comparison008.png", dpi=600, bbox_inches="tight")
 
     # Show the plot
     plt.show()
