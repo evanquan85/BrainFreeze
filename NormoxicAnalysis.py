@@ -9,7 +9,6 @@ def load_data(normoxic_file_path):
     """Load CSV file into a DataFrame."""
     return pd.read_csv(normoxic_file_path)
 
-
 def remove_spikes(df, factors, window_size):
     """Apply a rolling median filter with a larger window to remove more aggressive spikes."""
     for factor in factors:
@@ -23,6 +22,7 @@ def remove_spikes(df, factors, window_size):
 def analyze_brain_freeze(normoxic_file_path):
     """Main function to perform analysis."""
     df = load_data(normoxic_file_path)
+
     # Convert "Time (s)" to numeric to avoid TypeError
     df["Time (s)"] = pd.to_numeric(df["Time (s)"], errors='coerce')
 
@@ -72,7 +72,7 @@ def analyze_brain_freeze(normoxic_file_path):
 
         percent_change = round(((brain_freeze_mean - baseline_mean) / baseline_mean) * 100, 4)
 
-        # Perform dependent two-tailed t-test, handling NaNs and ensuring equal-length samples
+        # Perform dependent paired t-test, handling NaNs and ensuring equal-length samples
         clean_baseline = baseline_sample[factor].dropna().values
         clean_brain_freeze = brain_freeze_sample[factor].dropna().values
 
@@ -149,5 +149,8 @@ def analyze_brain_freeze(normoxic_file_path):
     # Show the plot
     plt.show()
 
+
 # REMEMBER TO CALL FUNCTION
 analyze_brain_freeze(normoxic_file_path)
+
+
