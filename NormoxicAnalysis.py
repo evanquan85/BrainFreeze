@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import scipy.stats as stats
+from scipy.stats import wilcoxon
 import matplotlib.pyplot as plt
 
 normoxic_file_path = 'data/BFData_08.csv' # Replace with actual file path
@@ -38,9 +39,8 @@ def analyze_brain_freeze(normoxic_file_path):
     #brain_freeze_df = brain_freeze_df.copy()  # Ensure it's a copy
     #brain_freeze_df.loc[:, "HR"] = brain_freeze_df["HR"].interpolate(method='linear')
 
-    # Extracting relevant columns for analysis (excluding Time and unnamed columns)
-    factors = ['MCAv_mean', 'MCAv_dia', 'MCAv_raw', 'MCAv_sys', 'FP_raw',
-               'HCU_pressure', 'Systolic', 'Mean_arterial', 'Diastolic', 'HR', 'MCA_PI']
+    # Extracting relevant columns for analysis (excluding Time, FP_raw, HCU_pressure, Systolic, Mean_arterial, Diastolic, HR)
+    factors = ['MCAv_mean', 'MCAv_dia', 'MCAv_raw', 'MCAv_sys', 'MCA_PI']
 
     # Apply spike removal filter with a more aggressive window size
     df = remove_spikes(df, factors, window_size=5)
@@ -50,6 +50,11 @@ def analyze_brain_freeze(normoxic_file_path):
     baseline_sample = baseline_df.iloc[:min_length].reset_index(drop=True)
     brain_freeze_sample = brain_freeze_df.iloc[:min_length].reset_index(drop=True)
 
+    # Convert all factor columns to numeric up front
+    for factor in factors:
+        baseline_sample[factor] = pd.to_numeric(baseline_sample[factor], errors='coerce')
+        brain_freeze_sample[factor] = pd.to_numeric(brain_freeze_sample[factor], errors='coerce')
+
     # Normalize time to be relative within each condition
     baseline_sample["Relative Time (s)"] = baseline_sample["Time (s)"] - baseline_sample["Time (s)"].iloc[0]
     brain_freeze_sample["Relative Time (s)"] = brain_freeze_sample["Time (s)"] - brain_freeze_sample["Time (s)"].iloc[0]
@@ -57,9 +62,6 @@ def analyze_brain_freeze(normoxic_file_path):
     # Calculate peak values and time to peak for each factor
     results = []
     for factor in factors:
-        # Ensure values are numeric to avoid TypeError
-        baseline_sample[factor] = pd.to_numeric(baseline_sample[factor], errors='coerce')
-        brain_freeze_sample[factor] = pd.to_numeric(brain_freeze_sample[factor], errors='coerce')
 
         baseline_peak = round(baseline_sample[factor].max(), 4)
         baseline_time = round(baseline_sample.loc[baseline_sample[factor].idxmax(), "Relative Time (s)"], 4)
@@ -79,11 +81,17 @@ def analyze_brain_freeze(normoxic_file_path):
         # Trim longer array to match the shorter one
         min_len = min(len(clean_baseline), len(clean_brain_freeze))
         if min_len > 1:
+            diffs = clean_baseline[:min_len] - clean_brain_freeze[:min_len]
+            mean_diff = np.mean(np.abs(diffs))
+            std_diff = np.std(diffs, ddof=1)
+            effect_size = round(mean_diff/std_diff, 4) if std_diff != 0 else np.nan
+
             t_stat, p_value = stats.ttest_rel(clean_baseline[:min_len], clean_brain_freeze[:min_len])
             t_stat = round(t_stat, 4)
-            p_value = round(p_value, 4)
+            p_value = round(p_value, 6)
+
         else:
-            t_stat, p_value = np.nan, np.nan  # Assign NaN if test cannot be performed
+            t_stat, p_value, effect_size= np.nan, np.nan, np.nan # Assign NaN if test cannot be performed
 
         results.append({
             "Factor": factor,
@@ -95,7 +103,8 @@ def analyze_brain_freeze(normoxic_file_path):
             "Brain Freeze Time to Peak": brain_freeze_time,
             "% Change of Means": percent_change,
             "T-Statistic": t_stat,
-            "P-Value": p_value
+            "P-Value": p_value,
+            "Effect Size (Cohen's d)": effect_size
         })
 
     # Convert results to DataFrame and display
@@ -106,20 +115,6 @@ def analyze_brain_freeze(normoxic_file_path):
     # Save dataframe print output as CSV - MODIFY FOR EACH PARTICIPANT
     results_df.to_csv('PrintOutputs/Brain_Freeze_Results008.csv', index=False)
 
-    # Plot comparison for each factor as overlapped line Graphs with relative time
-    '''
-    plt.figure(figsize=(12, 6))
-    for factor in factors:
-        plt.figure()
-        plt.plot(baseline_sample["Relative Time (s)"], baseline_sample[factor], label="Baseline", color='blue')
-        plt.plot(brain_freeze_sample["Relative Time (s)"], brain_freeze_sample[factor], label="Brain Freeze",
-                 color='red')
-        plt.xlabel("Relative Time (s)")
-        plt.ylabel(factor)
-        plt.title(f"Comparison of {factor} Over Relative Time")
-        plt.legend()
-        plt.show()
-    '''
     # Plot the data with MCAv_mean as a variable trace instead of a polynomial trendline
     plt.figure(figsize=(12, 6))
 
